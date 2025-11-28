@@ -52,6 +52,7 @@ Devvit.addSettings([
       `This setting affects the default value of the "Edit response" option on the pop-up.`,
     scope: "installation",
   },
+  // Config setting for PMing as subreddit (i.e. modmail)
   {
     type: "boolean",
     name: "pm-as-subreddit",
@@ -61,6 +62,7 @@ Devvit.addSettings([
       `This setting affects the default value of the "Message as subreddit" option on the pop-up.`,
     scope: "installation",
   },
+  // Config setting for reason title keywords
   {
     type: "paragraph",
     name: "title-keywords",
@@ -74,14 +76,24 @@ Devvit.addSettings([
   },
 ]);
 
+// Button for app settings
+Devvit.addMenuItem({
+  label: "Reason without Removal",
+  location: "subreddit", // can also be 'comment' or 'subreddit'
+  forUserType: "moderator",
+  onPress: async (event, context) => {
+    const subredditName = context.subredditName!;
+    context.ui.navigateTo(`https://developers.reddit.com/r/${subredditName}/apps/saved-response`);
+  },
+});
+
 // Button for form to create mod post
 Devvit.addMenuItem({
   label: "Create Mod-Team Post",
   location: "subreddit", // can also be 'comment' or 'subreddit'
   forUserType: "moderator",
   onPress: async (event, context) => {
-    const subredditName = await context.reddit.getCurrentSubredditName();
-    context.ui.showForm(postForm, { subredditName: subredditName });
+    context.ui.showForm(postForm, { subredditName: context.subredditName! });
   },
 });
 
@@ -293,8 +305,17 @@ const savedResponsePMForm = Devvit.createForm(
     // If the user chooses NOT to edit the response first, proceed with PM.
     else {
       const username = await getAuthorsUsername(context);
-      await pmUser(username, reasonText, pmAsSubreddit, context);
-      context.ui.showToast('Saved response sent as PM.');
+      try {
+        await pmUser(username, reasonText, pmAsSubreddit, context);
+        context.ui.showToast("Saved response sent as message.");
+      }
+      // If PM wasn't sent, catch the error and inform mod.
+      catch (error) {
+        if (error == "NOT_WHITELISTED_BY_USER_MESSAGE")
+          context.ui.showToast(`Error: u/${username} might have messaging disabled.`);
+        else
+          context.ui.showToast(`Error: Message not sent.`);
+      }
     }
   }
 );

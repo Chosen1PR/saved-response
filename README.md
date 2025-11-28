@@ -13,11 +13,18 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
+### [0.0.28] (2025-11-28)
+
+#### Features
+
+- Added an error message when a private message or modmail fails to send to a user.
+- Added a menu item at subreddit level for config settings.
+
 ### [0.0.27] (2025-11-12)
 
 #### Features
 
-- Added the ability to make a post with the u/saved-response bot account. This can help if you want to make a post on behalf of the entire mod team without using your personal account.
+- Added the ability to make a post with the u/saved-response bot account.
 - Changed "PM" references to "Message" for clarity.
 - Migrated app to Devvit Web.
 

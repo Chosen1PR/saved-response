@@ -2,5 +2,8 @@
   "name": "saved-response",
   "blocks": {
     "entry": "src/main.tsx"
+  },
+  "dev": {
+    "subreddit": "CapitalOneBank"
   }
 }
