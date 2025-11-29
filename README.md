@@ -13,7 +13,7 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
-### [0.0.28] (2025-11-28)
+### [0.0.29] (2025-11-28)
 
 #### Features
 
