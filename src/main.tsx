@@ -1,20 +1,10 @@
 // Learn more at developers.reddit.com/docs
 import {
-  //CommentCreate,
-  //CommentCreateDefinition,
-  //CommentDelete,
-  //Comment,
   Devvit,
-  //MenuItemOnPressEvent,
-  //Post,
   RemovalReason,
-  //SettingScope,
-  //TriggerContext,
-  //User,
-  //useState,
-  //ModMailService,
-  ModMailConversationState,
 } from "@devvit/public-api";
+
+import { PostOrCommentId } from "./types.js";
 
 Devvit.configure({
   redis: true,
@@ -82,8 +72,7 @@ Devvit.addMenuItem({
   location: "subreddit", // can also be 'comment' or 'subreddit'
   forUserType: "moderator",
   onPress: async (event, context) => {
-    const subredditName = context.subredditName!;
-    context.ui.navigateTo(`https://developers.reddit.com/r/${subredditName}/apps/saved-response`);
+    context.ui.navigateTo(`https://developers.reddit.com/r/${context.subredditName!}/apps/${context.appName}`);
   },
 });
 
@@ -129,10 +118,10 @@ const postForm = Devvit.createForm(
       cancelLabel: 'Cancel',
   }),
   async (event, context) => {
-    const postTitle = String(event.values.postTitle);
-    const postBody = String(event.values.postBody);
+    const postTitle = event.values.postTitle as string;
+    const postBody = event.values.postBody as string;
     const subredditName = context.subredditName!;
-    const pinPost = Boolean(event.values.pinPost);
+    const pinPost = event.values.pinPost as boolean;
     // Create the post in the specified subreddit
     const newPost = await context.reddit.submitPost({
       subredditName: subredditName,
@@ -144,6 +133,7 @@ const postForm = Devvit.createForm(
       await newPost.distinguish();
       if (pinPost)
         await newPost.sticky();
+      await addModNote(newPost.id, context);
       context.ui.showToast('Post created successfully.');
     }
   }
@@ -153,7 +143,7 @@ const postForm = Devvit.createForm(
 const savedResponseForm = Devvit.createForm(
   (data) => (
     {
-      title: 'Select Saved Response',
+      title: 'Comment Saved Response',
       fields: [
       {
         type: 'select',
@@ -192,11 +182,11 @@ const savedResponseForm = Devvit.createForm(
   async (event, context) => {
     // Leave a comment on the post with the selected removal reason text
     const id = context.commentId ?? context.postId!;
-    const reasonText = String(event.values.savedResponse);
-    const editResponse = Boolean(event.values.editResponse);
-    const lockResponse = Boolean(event.values.lockResponse);
-    const pinResponse = Boolean(event.values.pinResponse);
-    const isPost = Boolean(id.startsWith('t3_')); // Check if the ID starts with 't3_' to determine if it's a post
+    const reasonText = event.values.savedResponse as string;
+    const editResponse = event.values.editResponse as boolean;
+    const lockResponse = event.values.lockResponse as boolean;
+    const pinResponse = event.values.pinResponse as boolean;
+    const isPost = id.startsWith('t3_'); // Check if the ID starts with 't3_' to determine if it's a post
 
     // If the user chooses to edit the response first, call the other form.
     if (editResponse) {
@@ -209,6 +199,7 @@ const savedResponseForm = Devvit.createForm(
       // If the user chooses to lock the comment, proceed with comment lock.
       if (lockResponse)
         await newComment.lock();
+      await addModNote(newComment.id, context);
       context.ui.showToast('Saved response posted as comment.');
     }
   }
@@ -249,12 +240,13 @@ const editResponseForm = Devvit.createForm(
   ), async (event, context) => {
     // Leave a comment on the post with the selected removal reason text
     const id = context.commentId ?? context.postId!;
-    const reasonText = String(event.values.responseText);
+    const reasonText = event.values.responseText as string;
     const newComment = await context.reddit.submitComment({ id: id, text: reasonText });
     await newComment.distinguish(event.values.pinResponse); // Always distinguish the comment as mod.
     // If the user chooses to lock the comment, proceed with comment lock.
     if (event.values.lockResponse)
       await newComment.lock();
+    await addModNote(newComment.id, context);
     context.ui.showToast('Saved response posted as comment.');
   }
 );
@@ -263,7 +255,7 @@ const editResponseForm = Devvit.createForm(
 const savedResponsePMForm = Devvit.createForm(
   (data) => (
     {
-      title: 'Select Saved Response',
+      title: 'Message Saved Response',
       fields: [
       {
         type: 'select',
@@ -295,9 +287,9 @@ const savedResponsePMForm = Devvit.createForm(
   }),
   async (event, context) => {
     // PM the user with the selected removal reason text
-    const reasonText = String(event.values.savedResponse);
-    const editResponse = Boolean(event.values.editResponse);
-    const pmAsSubreddit = Boolean(event.values.pmAsSubreddit);
+    const reasonText = event.values.savedResponse as string;
+    const editResponse = event.values.editResponse as boolean;
+    const pmAsSubreddit = event.values.pmAsSubreddit as boolean;
     // If the user chooses to edit the response first, call the other form.
     if (editResponse) {
       context.ui.showForm(editResponsePMForm, { reasonText: reasonText, pmAsSubreddit: pmAsSubreddit  })
@@ -348,48 +340,37 @@ const editResponsePMForm = Devvit.createForm(
     }
   ), async (event, context) => {
     // PM user with the selected removal reason text
-    const reasonText = String(event.values.responseText);
+    const reasonText = event.values.responseText as string;
     const username = await getAuthorsUsername(context);
-    const pmAsSubreddit = Boolean(event.values.pmAsSubreddit);
-    await pmUser(username, reasonText, pmAsSubreddit, context);
-    context.ui.showToast('Saved response sent as PM.');
+    const pmAsSubreddit = event.values.pmAsSubreddit as boolean;
+    try {
+      await pmUser(username, reasonText, pmAsSubreddit, context);
+      context.ui.showToast("Saved response sent as message.");
+    }
+    // If PM wasn't sent, catch the error and inform mod.
+    catch (error) {
+      if (error == "NOT_WHITELISTED_BY_USER_MESSAGE")
+        context.ui.showToast(`Error: u/${username} might have messaging disabled.`);
+      else
+        context.ui.showToast(`Error: Message not sent.`);
+    }
   }
 );
 
-// Button on posts to comment a saved response
+// Button on posts/comments to comment a saved response
 Devvit.addMenuItem({
   label: "Comment Saved Response",
-  location: "post",
+  location: ["post","comment"],
   forUserType: "moderator",
   onPress: async (event, context) => {
     await commentSavedResponse(context);
   },
 });
 
-// Button on comments to comment a saved response
-Devvit.addMenuItem({
-  label: "Comment Saved Response",
-  location: "comment",
-  forUserType: "moderator",
-  onPress: async (event, context) => {
-    await commentSavedResponse(context);
-  },
-});
-
-// Button on posts to PM a saved response
+// Button on posts/comments to PM a saved response
 Devvit.addMenuItem({
   label: "Message Saved Response",
-  location: "post",
-  forUserType: "moderator",
-  onPress: async (event, context) => {
-    await pmSavedResponse(context);
-  },
-});
-
-// Button on comments to PM a saved response
-Devvit.addMenuItem({
-  label: "Message Saved Response",
-  location: "comment",
+  location: ["post","comment"],
   forUserType: "moderator",
   onPress: async (event, context) => {
     await pmSavedResponse(context);
@@ -398,19 +379,10 @@ Devvit.addMenuItem({
 
 // Helper function to show the initial pop-up upon clicking the "Leave Saved Response" menu item in a post or comment
 async function commentSavedResponse(context: Devvit.Context) {
-  const unfilteredReasons = await context.reddit.getSubredditRemovalReasons(context.subredditName!);
-  const keywordsTemp = await context.settings.get('title-keywords');
-  var keywords = '';
-  if (keywordsTemp!=undefined)
-    keywords = String(keywordsTemp).trim();
-
-  const reasons = filterReasonsByKeywords(unfilteredReasons, keywords);
-  const lockBool = await context.settings.get('lock-response');
-  const editBool = await context.settings.get('edit-response');
-  const pinBool = await context.settings.get('pin-response');
-  const lockSetting = Boolean(lockBool);
-  const editSetting = Boolean(editBool);
-  const pinSetting = Boolean(pinBool);
+  const reasons = await getFilteredRemovalReasons(context);
+  const lockSetting = (await context.settings.get('lock-response')) as boolean;
+  const editSetting = (await context.settings.get('edit-response')) as boolean;
+  const pinSetting = (await context.settings.get('pin-response')) as boolean;
   // Determine if the current context is a post or comment
   const id = context.commentId ?? context.postId!;
   var isPost = false;
@@ -422,17 +394,9 @@ async function commentSavedResponse(context: Devvit.Context) {
 
 // Helper function to show the initial pop-up upon clicking the "PM Saved Response" menu item in a post or comment
 async function pmSavedResponse(context: Devvit.Context) {
-  const unfilteredReasons = await context.reddit.getSubredditRemovalReasons(context.subredditName!);
-  const keywordsTemp = await context.settings.get('title-keywords');
-  var keywords = '';
-  if (keywordsTemp!=undefined)
-    keywords = String(keywordsTemp).trim();
-
-  const reasons = filterReasonsByKeywords(unfilteredReasons, keywords);
-  const pmAsSubBool = await context.settings.get('pm-as-subreddit');
-  const editBool = await context.settings.get('edit-response');
-  const pmAsSubreddit = Boolean(pmAsSubBool);
-  const editSetting = Boolean(editBool);
+  const reasons = await getFilteredRemovalReasons(context);
+  const pmAsSubreddit = (await context.settings.get('pm-as-subreddit')) as boolean;
+  const editSetting = (await context.settings.get('edit-response')) as boolean;
   context.ui.showForm(savedResponsePMForm, { reasons: reasons, editSetting: editSetting, pmAsSubreddit: pmAsSubreddit });
 }
 
@@ -482,61 +446,106 @@ async function pmUser(
   const prefix = await getPmPrefix(context);
   var messageText = prefix + savedResponse;
   if (pmAsSubreddit) {
-    await context.reddit.sendPrivateMessageAsSubreddit({
+    const newConvo = await context.reddit.modMail.createConversation({
       subject: subjectText,
-      text: messageText,
+      body: messageText,
+      isAuthorHidden: true,
       to: username,
-      fromSubredditName: subredditName,
+      subredditName: subredditName
     });
+    const convoId = newConvo.conversation.id!;
     // Archive the modmail conversation if PMing as subreddit
-    await archiveModmail(username, subjectText, context);
+    await context.reddit.modMail.reply({
+      body: `Originally sent by u/${context.username!}.`,
+      isAuthorHidden: false,
+      isInternal: true,
+      conversationId: convoId
+    })
+    try { await context.reddit.modMail.archiveConversation(convoId); }
+    catch {} // Catch needed in case modmail is sent to a mod, since mod discussions can't be archived.
   }
-  else {
+  else { // PM by bot account, NOT modmail
     messageText += `\n\n---\n\n*This inbox is not monitored. If you have any questions, please message the moderators of r/${subredditName}.*`;
     await context.reddit.sendPrivateMessage({
       subject: subjectText,
       text: messageText,
       to: username,
     });
+    const id = context.commentId ?? context.postId!;
+    await addModNoteForPm(username, context);
   }
 }
 
-// Helper function to archive modmail conversation after sending message as subreddit
-async function archiveModmail(username: string, subjectText: string, context: Devvit.Context) {
-  // Fetch recent modmail conversations
-  const { viewerId, conversations } = await context.reddit.modMail.getConversations({
-    limit: 25,
-    sort: 'mod',
+// Helper function to add a mod note to the app account when a saved response is left as comment (and who left it)
+async function addModNote(id: string, context: Devvit.Context) {
+  const noteText = `Saved Response left by u/${context.username!}.`;
+  await context.reddit.addModNote({
+    subreddit: context.subredditName!,
+    user: context.appName,
+    note: noteText,
+    redditId: id as PostOrCommentId,
   });
-  // Convert conversations object to an array for easier iteration
-  const arrayOfConversations = Object.values(conversations);
-
-  // Find the conversation with the matching subject and participant
-  for (const convo of arrayOfConversations) {
-    if (convo.subject === subjectText && convo.participant?.name === username && convo.state !== ModMailConversationState.Archived) {
-      await context.reddit.modMail.archiveConversation(convo.id!);
-      break; // Exit the loop after archiving the relevant conversation
-    }
-  }
 }
 
-// Helper function to determine if the title of a Removal Reason contains a specific word or phrase from a list.
-// Expects a fully trimmed list with no leading or trailing spaces.
-function filterReasonsByKeywords(reasons: RemovalReason[], keywords: string) {
-  if (keywords == '')
-    return reasons;
-  const keywordsArr = keywords.split(',');
-  var filteredReasons: RemovalReason[] = [];
+// Helper function to add a mod note to the app account when a saved response is sent as PM (and who sent it)
+async function addModNoteForPm(username: string, context: Devvit.Context) {
+  const noteText = `PM sent to u/${username} by u/${context.username!}.`;
+  const id = context.commentId ?? context.postId!;
+  await context.reddit.addModNote({
+    subreddit: context.subredditName!,
+    user: context.appName,
+    note: noteText,
+    redditId: id as PostOrCommentId,
+  });
+}
+
+// Helper function to get pre-filtered list of Removal Reasons
+async function getFilteredRemovalReasons(context: Devvit.Context) {
+  const unfilteredReasons = await context.reddit.getSubredditRemovalReasons(context.subredditName!);
+  const keywordList = (await context.settings.get("title-keywords")) as string;
+  if (keywordList == undefined || keywordList.trim() == "")
+    return unfilteredReasons;
+  const keywords = keywordList.trim().split(',');
+  var reasons: RemovalReason[] = [];
   for (let i = 0; i < reasons.length; i++) {
-    for (let j = 0; j < keywordsArr.length; j++) {
-      const keyword = keywordsArr[j].trim();
+    for (let j = 0; j < keywords.length; j++) {
+      const keyword = keywords[j].trim();
       if (keyword != '' && reasons[i].title.includes(keyword)) {
-        filteredReasons.push(reasons[i]);
+        reasons.push(reasons[i]);
         break;
       }
     }
   }
-  return filteredReasons;
+  return reasons;
 }
+
+// Keep this menu item commented out except for testing.
+/*
+Devvit.addMenuItem({
+  label: "Delete Saved Response",
+  description: "u/saved-response",
+  location: ["post","comment"],
+  forUserType: "moderator",
+  onPress: async (event, context) => {
+    const id = event.targetId;
+    if (id.startsWith('t3_')) {
+      const post = await context.reddit.getPostById(id);
+      if (post.authorName == context.appName) {
+        await post.delete();
+        context.ui.showToast(`Post deleted.`);
+      }
+      else context.ui.showToast(`Post is not by u/${context.appName}.`)
+    }
+    else {
+      const comment = await context.reddit.getCommentById(id);
+      if (comment.authorName == context.appName) {
+        await comment.delete();
+        context.ui.showToast(`Comment deleted.`);
+      }
+      else context.ui.showToast(`Comment is not by u/${context.appName}.`)
+    }
+  },
+});
+*/
 
 export default Devvit;
