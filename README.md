@@ -13,6 +13,13 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
+### [0.1.0] (2025-12-10)
+
+#### Bug Fixes
+
+- Fixed a bug introduced in that last update that caused filtered Removal Reasons to not show up properly.
+- Not a bug fix, but bumped the minor version.
+
 ### [0.0.31] (2025-12-09)
 
 #### Features

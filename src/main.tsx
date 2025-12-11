@@ -506,17 +506,17 @@ async function getFilteredRemovalReasons(context: Devvit.Context) {
   if (keywordList == undefined || keywordList.trim() == "")
     return unfilteredReasons;
   const keywords = keywordList.trim().split(',');
-  var reasons: RemovalReason[] = [];
-  for (let i = 0; i < reasons.length; i++) {
+  var filteredReasons: RemovalReason[] = [];
+  for (let i = 0; i < unfilteredReasons.length; i++) {
     for (let j = 0; j < keywords.length; j++) {
       const keyword = keywords[j].trim();
-      if (keyword != '' && reasons[i].title.includes(keyword)) {
-        reasons.push(reasons[i]);
+      if (keyword != '' && unfilteredReasons[i].title.includes(keyword)) {
+        filteredReasons.push(unfilteredReasons[i]);
         break;
       }
     }
   }
-  return reasons;
+  return filteredReasons;
 }
 
 // Keep this menu item commented out except for testing.
