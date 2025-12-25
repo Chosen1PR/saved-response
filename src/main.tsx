@@ -69,6 +69,7 @@ Devvit.addSettings([
 // Button for app settings
 Devvit.addMenuItem({
   label: "Reason without Removal",
+  description: "Settings",
   location: "subreddit", // can also be 'comment' or 'subreddit'
   forUserType: "moderator",
   onPress: async (event, context) => {
@@ -325,7 +326,7 @@ const editResponsePMForm = Devvit.createForm(
           defaultValue: data.reasonText,
           lineHeight: 5,
           required: true,
-          helpText: "Don't bother linking to the post or comment you're responding to; the private message will include a prefix with that information"
+          helpText: "The private message will include a prefix with information about the post or comment you're responding to"
             + ". If you're not removing a post or comment, you should remove any and all references to removal.",
         },
         {
