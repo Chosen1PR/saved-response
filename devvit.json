@@ -3,6 +3,9 @@
   "blocks": {
     "entry": "src/main.tsx"
   },
+  "marketingAssets": {
+    "icon": "assets/rwr-icon.png"
+  },
   "dev": {
     "subreddit": "CapitalOneBank"
   }
