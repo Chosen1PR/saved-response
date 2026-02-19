@@ -111,7 +111,7 @@ const postForm = Devvit.createForm(
         name: 'postBody',
         label: 'Post Body',
         required: true,
-        lineHeight: 10,
+        lineHeight: 15,
         helpText: 'Write the body of your post here. You can use markdown formatting.',
       },
       {
