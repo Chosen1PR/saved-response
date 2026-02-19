@@ -4,7 +4,12 @@ import {
   RemovalReason,
 } from "@devvit/public-api";
 
-import { PostOrCommentId } from "./types.js";
+import {
+  getAuthorsUsername,
+  pmUser,
+  addModNote,
+  getFilteredRemovalReasons,
+} from "./utils.js";
 
 Devvit.configure({
   redis: true,
@@ -46,7 +51,7 @@ Devvit.addSettings([
   {
     type: "boolean",
     name: "pm-as-subreddit",
-    label: "Message as subreddit by default",
+    label: "Private message as subreddit by default",
     defaultValue: true,
     helpText:
       `This setting affects the default value of the "Message as subreddit" option on the pop-up.`,
@@ -73,7 +78,7 @@ Devvit.addMenuItem({
   location: "subreddit", // can also be 'comment' or 'subreddit'
   forUserType: "moderator",
   onPress: async (event, context) => {
-    context.ui.navigateTo(`https://developers.reddit.com/r/${context.subredditName!}/apps/${context.appName}`);
+    context.ui.navigateTo(`https://developers.reddit.com/r/${context.subredditName!}/apps/${context.appSlug}`);
   },
 });
 
@@ -92,7 +97,7 @@ const postForm = Devvit.createForm(
   (data) => (
     {
       title: 'Create Mod Post',
-      description: `Create a new post that will be posted by the u/saved-response bot account.`,
+      description: `Create a new post that will be posted by the u/saved-response account.`,
       fields: [
       {
         type: 'string',
@@ -135,7 +140,7 @@ const postForm = Devvit.createForm(
       if (pinPost)
         await newPost.sticky();
       await addModNote(newPost.id, context);
-      context.ui.showToast('Post created successfully.');
+      context.ui.navigateTo(`https://www.reddit.com${newPost.permalink}`);
     }
   }
 );
@@ -183,7 +188,7 @@ const savedResponseForm = Devvit.createForm(
   async (event, context) => {
     // Leave a comment on the post with the selected removal reason text
     const id = context.commentId ?? context.postId!;
-    const reasonText = event.values.savedResponse as string;
+    const reasonText = event.values.savedResponse.toString() as string;
     const editResponse = event.values.editResponse as boolean;
     const lockResponse = event.values.lockResponse as boolean;
     const pinResponse = event.values.pinResponse as boolean;
@@ -195,13 +200,14 @@ const savedResponseForm = Devvit.createForm(
     }
     // If the user chooses NOT to edit the response first, proceed with leaving a comment.
     else {
+      console.log(`\nID: ${id}\nreasonText: ${reasonText}\neditResponse: ${editResponse}\nlockResponse: ${lockResponse}\npinResponse: ${pinResponse}\n`);
       const newComment = await context.reddit.submitComment({ id: id, text: reasonText });
       await newComment.distinguish(pinResponse); // Always distinguish the comment as mod.
       // If the user chooses to lock the comment, proceed with comment lock.
       if (lockResponse)
         await newComment.lock();
       await addModNote(newComment.id, context);
-      context.ui.showToast('Saved response posted as comment.');
+      context.ui.showToast('Saved response submitted as comment.');
     }
   }
 );
@@ -248,7 +254,7 @@ const editResponseForm = Devvit.createForm(
     if (event.values.lockResponse)
       await newComment.lock();
     await addModNote(newComment.id, context);
-    context.ui.showToast('Saved response posted as comment.');
+    context.ui.showToast('Saved response submitted as comment.');
   }
 );
 
@@ -401,125 +407,6 @@ async function pmSavedResponse(context: Devvit.Context) {
   context.ui.showForm(savedResponsePMForm, { reasons: reasons, editSetting: editSetting, pmAsSubreddit: pmAsSubreddit });
 }
 
-// Helper function to get prefix that goes before Saved Response in PM.
-async function getPmPrefix(context: Devvit.Context) {
-  const id = context.commentId ?? context.postId!;
-  var prefix = 'In response to ';
-  if (id.startsWith('t1_')) {
-    const originalComment = await context.reddit.getCommentById(id);
-    const originalPermalink = originalComment.permalink;
-    prefix += `[your comment](${originalPermalink}):\n\n---\n\n`;
-  }
-  else if (id.startsWith('t3_')) {
-    const originalPost = await context.reddit.getPostById(id);
-    const originalPermalink = originalPost.permalink;
-    prefix += `[your post](${originalPermalink}):\n\n---\n\n`;
-  }
-  return prefix;
-}
-
-// Helper function to get username of original author of comment or post.
-async function getAuthorsUsername(context: Devvit.Context) {
-  const id = context.commentId ?? context.postId!;
-  var username = '';
-  // Determine if the current context is a comment or post and return the author name accordingly
-  if (id.startsWith('t1_')) {
-    const originalComment = await context.reddit.getCommentById(id);
-    username = originalComment.authorName!;
-  }
-  // If the ID starts with 't3_', it's a post, so return the author name from the post
-  else if (id.startsWith('t3_')) {
-    const originalPost = await context.reddit.getPostById(id);
-    username = originalPost.authorName!;
-  }
-  return username;
-}
-
-// Helper function that handles the PM to user.
-async function pmUser(
-  username: string,
-  savedResponse: string,
-  pmAsSubreddit: boolean,
-  context: Devvit.Context
-) {
-  const subredditName = await context.reddit.getCurrentSubredditName()!;
-  const subjectText = `A message from r/${subredditName}`;
-  const prefix = await getPmPrefix(context);
-  var messageText = prefix + savedResponse;
-  if (pmAsSubreddit) {
-    const newConvo = await context.reddit.modMail.createConversation({
-      subject: subjectText,
-      body: messageText,
-      isAuthorHidden: true,
-      to: username,
-      subredditName: subredditName
-    });
-    const convoId = newConvo.conversation.id!;
-    // Archive the modmail conversation if PMing as subreddit
-    await context.reddit.modMail.reply({
-      body: `Originally sent by u/${context.username!}.`,
-      isAuthorHidden: false,
-      isInternal: true,
-      conversationId: convoId
-    })
-    try { await context.reddit.modMail.archiveConversation(convoId); }
-    catch {} // Catch needed in case modmail is sent to a mod, since mod discussions can't be archived.
-  }
-  else { // PM by bot account, NOT modmail
-    messageText += `\n\n---\n\n*This inbox is not monitored. If you have any questions, please message the moderators of r/${subredditName}.*`;
-    await context.reddit.sendPrivateMessage({
-      subject: subjectText,
-      text: messageText,
-      to: username,
-    });
-    const id = context.commentId ?? context.postId!;
-    await addModNoteForPm(username, context);
-  }
-}
-
-// Helper function to add a mod note to the app account when a saved response is left as comment (and who left it)
-async function addModNote(id: string, context: Devvit.Context) {
-  const noteText = `Saved Response left by u/${context.username!}.`;
-  await context.reddit.addModNote({
-    subreddit: context.subredditName!,
-    user: context.appName,
-    note: noteText,
-    redditId: id as PostOrCommentId,
-  });
-}
-
-// Helper function to add a mod note to the app account when a saved response is sent as PM (and who sent it)
-async function addModNoteForPm(username: string, context: Devvit.Context) {
-  const noteText = `PM sent to u/${username} by u/${context.username!}.`;
-  const id = context.commentId ?? context.postId!;
-  await context.reddit.addModNote({
-    subreddit: context.subredditName!,
-    user: context.appName,
-    note: noteText,
-    redditId: id as PostOrCommentId,
-  });
-}
-
-// Helper function to get pre-filtered list of Removal Reasons
-async function getFilteredRemovalReasons(context: Devvit.Context) {
-  const unfilteredReasons = await context.reddit.getSubredditRemovalReasons(context.subredditName!);
-  const keywordList = (await context.settings.get("title-keywords")) as string;
-  if (keywordList == undefined || keywordList.trim() == "")
-    return unfilteredReasons;
-  const keywords = keywordList.trim().split(',');
-  var filteredReasons: RemovalReason[] = [];
-  for (let i = 0; i < unfilteredReasons.length; i++) {
-    for (let j = 0; j < keywords.length; j++) {
-      const keyword = keywords[j].trim();
-      if (keyword != '' && unfilteredReasons[i].title.includes(keyword)) {
-        filteredReasons.push(unfilteredReasons[i]);
-        break;
-      }
-    }
-  }
-  return filteredReasons;
-}
-
 // Keep this menu item commented out except for testing.
 /*
 Devvit.addMenuItem({
@@ -531,19 +418,19 @@ Devvit.addMenuItem({
     const id = event.targetId;
     if (id.startsWith('t3_')) {
       const post = await context.reddit.getPostById(id);
-      if (post.authorName == context.appName) {
+      if (post.authorName == context.appSlug) {
         await post.delete();
         context.ui.showToast(`Post deleted.`);
       }
-      else context.ui.showToast(`Post is not by u/${context.appName}.`)
+      else context.ui.showToast(`Post is not by u/${context.appSlug}.`)
     }
     else {
       const comment = await context.reddit.getCommentById(id);
-      if (comment.authorName == context.appName) {
+      if (comment.authorName == context.appSlug) {
         await comment.delete();
         context.ui.showToast(`Comment deleted.`);
       }
-      else context.ui.showToast(`Comment is not by u/${context.appName}.`)
+      else context.ui.showToast(`Comment is not by u/${context.appSlug}.`)
     }
   },
 });

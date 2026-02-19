@@ -13,6 +13,16 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
+### [0.1.6] (2026-02-19)
+
+#### Bug Fixes
+
+- Fixed a bug where comments would not submit unless you edited them first.
+
+#### Features
+
+- Creating a Mod-Team post now navigates you to the newly created post.
+
 ### [0.1.5] (2026-01-12)
 
 - New app icon.
