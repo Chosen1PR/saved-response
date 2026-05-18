@@ -13,6 +13,14 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
+### [0.1.9] (2026-05-18)
+
+#### Features
+
+- App icon now appears as app account's avatar.
+- Updated description on app profile page.
+- Updated Devvit CLI to 0.12.24.
+
 ### [0.1.8] (2026-02-19)
 
 #### Bug Fixes
