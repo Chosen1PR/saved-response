@@ -4,7 +4,7 @@
     "entry": "src/main.tsx"
   },
   "marketingAssets": {
-    "icon": "assets/rwr-icon.png"
+    "icon": "assets/sr-icon.png"
   },
   "dev": {
     "subreddit": "CapitalOneBank"
