@@ -13,6 +13,11 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 ## Changelog
 
+### [0.1.13] (2026-06-03)
+
+- Removed the Settings menu item at subreddit level for a cleaner menu. Settings are still accessible from developers.reddit.com.
+- Updated Devvit CLI to 0.13.2.
+
 ### [0.1.12] (2026-05-22)
 
 - Updated app icon. No new features.

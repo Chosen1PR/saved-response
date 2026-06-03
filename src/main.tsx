@@ -71,7 +71,9 @@ Devvit.addSettings([
   },
 ]);
 
+/*
 // Button for app settings
+// Likely not needed
 Devvit.addMenuItem({
   label: "Reason without Removal",
   description: "Settings",
@@ -81,6 +83,7 @@ Devvit.addMenuItem({
     context.ui.navigateTo(`https://developers.reddit.com/r/${context.subredditName!}/apps/${context.appSlug}`);
   },
 });
+*/
 
 // Button for form to create mod post
 Devvit.addMenuItem({
