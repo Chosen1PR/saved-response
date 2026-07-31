@@ -18,7 +18,7 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 #### Features
 
-- Added the ability to delete (not just remove) a post or comment made by u/saved-response. Simply reply "!delete" (without quotes) in response to the app.
+- Added the ability to delete (not just remove) a post or comment made by u/saved-response. Simply reply "!delete" (without quotes) in response to the app with your mod account.
 - Rewrote entire app in Devvit Web for better future proofing and maintainability.
 
 ### [0.1.13] (2026-06-03)
