@@ -2,14 +2,30 @@
   "private": true,
   "name": "saved-response",
   "version": "0.0.0",
-  "license": "BSD-3-Clause",
   "type": "module",
+  "scripts": {
+    "build:server": "cd src/server && vite build",
+    "build": "npm run build:server",
+    "deploy": "npm run build && npx devvit upload",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SERVER,DEVVIT\" -c \"blue,green,magenta\" \"npm run dev:server\" \"npm run dev:devvit\"",
+    "dev:devvit": "dotenv -e .env -- devvit playtest",
+    "dev:server": "cd src/server && vite build --watch",
+    "login": "npx devvit login",
+    "launch": "npm run build && npm run deploy && npx devvit publish",
+    "type-check": "tsc --build",
+    "playtest": "npm run build && npx devvit playtest",
+    "publish": "npm run build && npx devvit publish --public"
+  },
   "dependencies": {
-    "@devvit/public-api": "0.13.2",
-    "vitest": "^4.1.8"
+    "@devvit/web": "0.13.6",
+    "express": "5.1.0"
   },
   "devDependencies": {
-    "devvit": "0.13.2",
-    "typescript": "5.8.3"
+    "@types/express": "5.0.1",
+    "concurrently": "9.1.2",
+    "devvit": "0.13.6",
+    "dotenv-cli": "8.0.0",
+    "typescript": "5.8.3",
+    "vite": "^7.2.6"
   }
 }

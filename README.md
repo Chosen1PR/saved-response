@@ -4,14 +4,22 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 - Edit the response before sending.
 - Leave the response as a comment or send it as a private message.
 - Pin and/or lock comments immediately on posting.
-- Choose whether PMs are sent from the subreddit (as modmail) or from the bot (whose inbox is *not* monitored).
+- Choose whether PMs are sent from the subreddit (as modmail) or from the app account (whose inbox is *not* monitored).
 - Configure the default options for editing responses, locking comments, and PMing as the subreddit. You'll still be able to adjust these settings while responding, but the defaults can be changed to your most frequently used preferences.
 - Define a list of case-sensitive keywords or phrases that *must* be in a Removal Reason's title for it to be included for selection. This could be useful if, for example, you have some removal reasons that include the word "Warning" in the title, to distinguish them from reasons that have messages meant for actual removal of content.
-- Create a new post with the bot account. This can help if you want to make a post on behalf of the entire mod team without using your personal account.
+- Create a new post with the app account. This can help if you want to make a post on behalf of the entire mod team without using your personal account.
+- Delete (not just remove) a post or comment made by the app account. To do this, a mod can reply with "!delete" (without quotes). Note: This command will only work for mods, not for regular users.
 
 ---
 
 ## Changelog
+
+### [0.2.0] (2026-07-31)
+
+#### Features
+
+- Added the ability to delete (not just remove) a post or comment made by u/saved-response. Simply reply "!delete" (without quotes) in response to the app.
+- Rewrote entire app in Devvit Web for better future proofing and maintainability.
 
 ### [0.1.13] (2026-06-03)
 
@@ -59,7 +67,7 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 #### Features
 
-- App now adds a mod note to the u/saved-response bot account whenever a removal reason is commented or messaged privately, with the username of the mod who took the action. Mod notes are limited to 1,000 per user, so old mod notes may be overwritten once this per-subreddit limit is reached.
+- App now adds a mod note to the u/saved-response app account whenever a removal reason is commented or messaged privately, with the username of the mod who took the action. Mod notes are limited to 1,000 per user, so old mod notes may be overwritten once this per-subreddit limit is reached.
 - For saved responses sent as the subreddit, app now adds a private mod note in the conversation with the username of the mod who took the action.
 - Performance improvements, particularly with modmail.
 
@@ -74,7 +82,7 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 
 #### Features
 
-- Added the ability to make a post with the u/saved-response bot account.
+- Added the ability to make a post with the u/saved-response app account.
 - Changed "PM" references to "Message" for clarity.
 - Bumped Devvit version to 0.12.x
 

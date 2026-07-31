@@ -1,7 +1,92 @@
 {
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
   "name": "saved-response",
-  "blocks": {
-    "entry": "src/main.tsx"
+  "permissions": {
+    "http": {
+      "enable": false
+    },
+    "media": false,
+    "realtime": false,
+    "redis": true,
+    "reddit": {
+      "enable": true
+    }
+  },
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "settings": {
+    "subreddit": {
+      "pin-response": {
+        "type": "boolean",
+        "label": "Pin response by default",
+        "helpText": "This setting affects the default value of the \"Pin response\" option on the pop-up.",
+        "defaultValue": true
+      },
+      "lock-response": {
+        "type": "boolean",
+        "label": "Lock response by default",
+        "helpText": "This setting affects the default value of the \"Lock response\" option on the pop-up.",
+        "defaultValue": true
+      },
+      "edit-response": {
+        "type": "boolean",
+        "label": "Edit response by default",
+        "helpText": "This setting affects the default value of the \"Edit response\" option on the pop-up.",
+        "defaultValue": false
+      },
+      "pm-as-subreddit": {
+        "type": "boolean",
+        "label": "Private message as subreddit by default",
+        "helpText": "This setting affects the default value of the \"Message as subreddit\" option on the pop-up.",
+        "defaultValue": false
+      },
+      "title-keywords": {
+        "type": "paragraph",
+        "label": "Keywords in reason title (case-sensitive)",
+        "helpText": "Enter a comma (,) separated list of case-sensitive keywords or phrases that MUST be in the removal reason's title for it to be included for selection in the pop-up (e.g. the word \"Warning\"). Works with certain special characters like brackets or quotes, but not commas. Leave blank for no title restrictions.",
+        "defaultValue": ""
+      }
+    }
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Create Mod-Team Post",
+        "forUserType": "moderator",
+        "location": ["subreddit"],
+        "endpoint": "/internal/menu/create-modteam-post"
+      },
+      {
+        "label": "Comment Saved Response",
+        "forUserType": "moderator",
+        "location": [
+          "post",
+          "comment"
+        ],
+        "endpoint": "/internal/menu/comment-saved-response"
+      },
+      {
+        "label": "Message Saved Response",
+        "forUserType": "moderator",
+        "location": [
+          "post",
+          "comment"
+        ],
+        "endpoint": "/internal/menu/message-saved-response"
+      }
+    ]
+  },
+  "forms": {
+    "postForm": "/internal/forms/modteam-post-submit",
+    "savedResponseForm": "/internal/forms/saved-response-submit",
+    "editResponseForm": "/internal/forms/edit-response-submit",
+    "savedResponsePMForm": "/internal/forms/saved-response-pm-submit",
+    "editResponsePMForm": "/internal/forms/edit-response-pm-submit"
+  },
+  "triggers": {
+    "onCommentCreate": "/internal/triggers/on-comment-create"
   },
   "marketingAssets": {
     "icon": "assets/sr-icon.png"
