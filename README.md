@@ -17,6 +17,7 @@ After installing, some new menu items will appear on your subreddit. These are w
 - **To comment a removal reason:** Find the mod shield menu on a post or comment and select "Comment Saved Response."
 - **To private message or modmail a removal reason:** Find the mod shield menu on a post or comment and select "Message Saved Response."
 - **To create a mod-distinguished text post from the app account:** Find the three dots (...) menu at the top right corner of your subreddit and select "Create Mod-Team Post."
+- **To delete (not just remove) a post or comment by the app account:** Using your own Reddit account (which must be a mod of your subreddit), comment "!delete" (without quotes) in response to the app account.
 
 ---
 
