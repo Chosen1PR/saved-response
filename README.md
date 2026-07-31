@@ -23,7 +23,7 @@ After installing, some new menu items will appear on your subreddit. These are w
 
 ## Changelog
 
-### [0.2.1] (2026-07-31)
+### [0.2.3] (2026-07-31)
 
 #### Features
 
