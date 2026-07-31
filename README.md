@@ -10,11 +10,19 @@ This app allows moderators to respond with one of their saved Removal Reasons wi
 - Create a new post with the app account. This can help if you want to make a post on behalf of the entire mod team without using your personal account.
 - Delete (not just remove) a post or comment made by the app account. To do this, a mod can reply with "!delete" (without quotes). Note: This command will only work for mods, not for regular users.
 
+## Instructions
+
+After installing, some new menu items will appear on your subreddit. These are what you'll use to comment or message a saved response from the app account.
+
+- **To comment a removal reason:** Find the mod shield menu on a post or comment and select "Comment Saved Response."
+- **To private message or modmail a removal reason:** Find the mod shield menu on a post or comment and select "Message Saved Response."
+- **To create a mod-distinguished text post from the app account:** Find the three dots (...) menu at the top right corner of your subreddit and select "Create Mod-Team Post."
+
 ---
 
 ## Changelog
 
-### [0.2.0] (2026-07-31)
+### [0.2.1] (2026-07-31)
 
 #### Features
 
